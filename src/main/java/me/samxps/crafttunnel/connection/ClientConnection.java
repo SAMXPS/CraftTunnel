@@ -5,6 +5,7 @@ import java.net.Socket;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.WrappedConnection;
 
 @RequiredArgsConstructor
@@ -20,9 +21,10 @@ public class ClientConnection implements WrappedConnection {
 	
 	public void connectToServer() throws IOException {
 		if (server == null) {
-			// TODO: configurable host and port
-			server = new ServerConnection("localhost", 25565);
+			CraftTunnel main = CraftTunnel.getInstance();
+			server = new ServerConnection(main.getRemoteHost(), main.getRemotePort());
 			server.connect();
+			// TODO: Send wrapped client IP address to the server
 		}
 	}
 	

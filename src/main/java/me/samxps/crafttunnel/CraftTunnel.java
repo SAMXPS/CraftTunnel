@@ -4,12 +4,16 @@ import java.io.IOException;
 import java.lang.System.Logger;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.connection.ClientServerLinker;
 import me.samxps.crafttunnel.connection.ConnectionListener;
 
+@RequiredArgsConstructor
 @Getter
 public class CraftTunnel {
 	
+	private final String remoteHost;
+	private final int remotePort;
 	@Getter
 	private static CraftTunnel instance;
 	private ConnectionListener listener;
@@ -24,6 +28,8 @@ public class CraftTunnel {
 		listener.bind();
 		listener.listen();
 	}
+	
+	
 	
 	
 }

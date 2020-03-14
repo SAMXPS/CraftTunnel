@@ -62,6 +62,9 @@ public class ClientServerLinker implements IncomingConnectionHandler {
 			ServerConnection server = client.getServer();
 			long loopst = System.currentTimeMillis();
 			int bytes = 0;
+			
+			// TODO: Improve CPU usage performance on this loop
+			// without sacrificing latency
 			while (client.isConnected() && server.isConnected()) {
 				bytes += server.sendBytes(client.readBytes());
 				bytes += client.sendBytes(server.readBytes());
