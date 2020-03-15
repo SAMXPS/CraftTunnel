@@ -1,5 +1,7 @@
 package me.samxps.crafttunnel.netty;
 
+import java.util.logging.Level;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -9,6 +11,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.AllArgsConstructor;
+import me.samxps.crafttunnel.CraftTunnel;
 
 /**
  * TunnelServer is the implementation of CraftTunnel using netty
@@ -38,6 +41,10 @@ public class TunnelServer {
 			
 			// Bind and wait for connections
 			ChannelFuture f = b.bind(port).sync();
+			
+			CraftTunnel.getLogger().log(Level.INFO, "[{0}] Listening on port {1}", new Object[] {
+				"TunnelServer", String.valueOf(port)
+			});
 			
 			// Wait until the server socket closes
 			f.channel().closeFuture().sync();

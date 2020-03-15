@@ -1,6 +1,6 @@
 package me.samxps.crafttunnel;
 
-import java.lang.System.Logger;
+import java.util.logging.Logger;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class CraftTunnel {
 	@Getter
 	private static TunnelServer server;
 	@Getter
-	private static final Logger logger = System.getLogger("CraftTunnelLogger");
+	private static final Logger logger = Logger.getLogger("CraftTunnelLogger");
 	
 	public void init() throws Exception {
 		instance = this;

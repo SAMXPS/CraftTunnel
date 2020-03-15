@@ -1,9 +1,12 @@
 package me.samxps.crafttunnel.netty;
 
+import java.util.logging.Level;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import me.samxps.crafttunnel.CraftTunnel;
 
 /**
  * This will handle incoming packets from the connecting player and forward them
@@ -18,6 +21,10 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		// channelActive is called when the connection is made and ready to generate traffic.
 		
+		CraftTunnel.getLogger().log(Level.INFO, "[{0}] new connection from {1}", new Object[] {
+				"ClientChannelHandler", ctx.channel().remoteAddress().toString()
+		});
+		
 		// Initiates the connection to the remote server and waits
 		ChannelFuture f = remote.init(ctx.channel()).sync(); 
 		
@@ -26,6 +33,7 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 			
 			// TODO: Initial handshake and sending IP information of the player
 			// NOTE: This maybe will need to be wrapped inside Minecraft protocol packets
+			// Suggestion: use HAProxy protocol instead? http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 		} else {
 			// Closes client connection if the server connection failed
 			ctx.channel().close();
