@@ -1,6 +1,5 @@
 package me.samxps.crafttunnel;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 import joptsimple.OptionParser;

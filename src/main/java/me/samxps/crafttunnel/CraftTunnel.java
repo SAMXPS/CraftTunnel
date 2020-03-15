@@ -1,12 +1,9 @@
 package me.samxps.crafttunnel;
 
-import java.io.IOException;
 import java.lang.System.Logger;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import me.samxps.crafttunnel.connection.ConnectionListener;
-import me.samxps.crafttunnel.linker.ClientServerLinker;
 import me.samxps.crafttunnel.netty.TunnelServer;
 
 @RequiredArgsConstructor
