@@ -37,10 +37,10 @@ public class CraftTunnelLauncher {
         	bindport = (int) options.valueOf("svhost");
         }
         
-		CraftTunnel tunnel = new CraftTunnel(svhost, svport);
+		CraftTunnel tunnel = new CraftTunnel(bindport, svhost, svport);
 		try {
 			tunnel.init();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
