@@ -10,6 +10,10 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.AllArgsConstructor;
 
+/**
+ * TunnelServer is the implementation of CraftTunnel using netty
+ * as the network connection manager.
+ * */
 @AllArgsConstructor
 public class TunnelServer {
 
@@ -26,7 +30,7 @@ public class TunnelServer {
 			 .childHandler(new ChannelInitializer<SocketChannel>() {
 				@Override
 				protected void initChannel(SocketChannel ch) throws Exception {
-					ch.pipeline().addLast(new ClientServerLinkerHandler());
+					ch.pipeline().addLast(new ClientChannelHandler());
 				}
 			 })
 			 .option(ChannelOption.SO_BACKLOG, 128)
