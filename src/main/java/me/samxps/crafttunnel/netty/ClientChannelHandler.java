@@ -47,12 +47,9 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		// channelRead is called every time a message is received
-		try {
-			serverChannel.write(msg);
-		} finally {
-			// Release the message
-			ReferenceCountUtil.release(msg);
-		}
+		
+		serverChannel.write(msg);
+		serverChannel.flush();
 	}
 	
 	@Override

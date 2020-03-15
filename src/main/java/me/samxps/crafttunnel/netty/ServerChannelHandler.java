@@ -13,14 +13,10 @@ public class ServerChannelHandler extends ChannelInboundHandlerAdapter {
 	private final Channel clientChannel;
 	
 	@Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		try {
-			// Forwards the received message to client
-			clientChannel.write(msg);
-		} finally {
-			// Release the message
-			ReferenceCountUtil.release(msg);
-		}
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {		
+		// Forwards the received message to client
+		clientChannel.write(msg);
+		clientChannel.flush();
 	}
 	
 	@Override
