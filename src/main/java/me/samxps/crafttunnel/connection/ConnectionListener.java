@@ -9,7 +9,6 @@ import java.util.HashSet;
 
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
-import me.samxps.crafttunnel.IncomingConnectionHandler;
 
 @RequiredArgsConstructor
 public class ConnectionListener {

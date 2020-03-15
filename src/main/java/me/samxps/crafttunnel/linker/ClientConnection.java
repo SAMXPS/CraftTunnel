@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.connection;
+package me.samxps.crafttunnel.linker;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -6,14 +6,14 @@ import java.net.Socket;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
-import me.samxps.crafttunnel.WrappedConnection;
+import me.samxps.crafttunnel.connection.ConnectionWrapper;
+import me.samxps.crafttunnel.connection.WrappedConnection;
 
 @RequiredArgsConstructor
 public class ClientConnection implements WrappedConnection {
 	
 	private final ConnectionWrapper con;
 	@Getter private ServerConnection server;
-	protected Thread clientThread;
 	
 	public ClientConnection(Socket socket) throws IOException {
 		this(new ConnectionWrapper(socket));

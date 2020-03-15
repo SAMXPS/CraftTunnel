@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel;
+package me.samxps.crafttunnel.connection;
 
 import java.net.Socket;
 

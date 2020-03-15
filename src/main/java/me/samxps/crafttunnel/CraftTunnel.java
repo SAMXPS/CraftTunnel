@@ -5,8 +5,8 @@ import java.lang.System.Logger;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import me.samxps.crafttunnel.connection.ClientServerLinker;
 import me.samxps.crafttunnel.connection.ConnectionListener;
+import me.samxps.crafttunnel.linker.ClientServerLinker;
 
 @RequiredArgsConstructor
 @Getter

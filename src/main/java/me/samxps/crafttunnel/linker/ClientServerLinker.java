@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.connection;
+package me.samxps.crafttunnel.linker;
 
 import java.io.IOException;
 import java.lang.System.Logger.Level;
@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import me.samxps.crafttunnel.CraftTunnel;
-import me.samxps.crafttunnel.IncomingConnectionHandler;
+import me.samxps.crafttunnel.connection.IncomingConnectionHandler;
 
 public class ClientServerLinker implements IncomingConnectionHandler {
 
@@ -44,12 +44,12 @@ public class ClientServerLinker implements IncomingConnectionHandler {
 		try {
 			final ClientConnection client = new ClientConnection(socket);
 			clients.add(client);
-			client.clientThread = new Thread(new Runnable() {
+			final Thread clientThread = new Thread(new Runnable() {
 				public void run() {
 					loop(client);
 				}
 			});
-			client.clientThread.start();
+			clientThread.start();
 		} catch (IOException e) {
 			safelyCloseSocket(socket);
 			e.printStackTrace();

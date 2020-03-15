@@ -1,8 +1,6 @@
-package me.samxps.crafttunnel;
+package me.samxps.crafttunnel.connection;
 
 import java.io.IOException;
-
-import me.samxps.crafttunnel.connection.ConnectionWrapper;
 
 public interface WrappedConnection {
 

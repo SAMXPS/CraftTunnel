@@ -1,11 +1,12 @@
-package me.samxps.crafttunnel.connection;
+package me.samxps.crafttunnel.linker;
 
 import java.io.IOException;
 import java.net.Socket;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import me.samxps.crafttunnel.WrappedConnection;
+import me.samxps.crafttunnel.connection.ConnectionWrapper;
+import me.samxps.crafttunnel.connection.WrappedConnection;
 
 @RequiredArgsConstructor
 public class ServerConnection implements WrappedConnection {
