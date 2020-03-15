@@ -14,6 +14,7 @@ public class ClientServerLinker implements IncomingConnectionHandler {
 
 	private List<ClientConnection> clients = new LinkedList<ClientConnection>();
 	
+	
 	private void safelyCloseSocket(Socket socket) {
 		try {
 			socket.close();
@@ -63,8 +64,7 @@ public class ClientServerLinker implements IncomingConnectionHandler {
 			long loopst = System.currentTimeMillis();
 			int bytes = 0;
 			
-			// TODO: Improve CPU usage performance on this loop
-			// without sacrificing latency
+			// TODO: rewrite connections using Netty
 			while (client.isConnected() && server.isConnected()) {
 				bytes += server.sendBytes(client.readBytes());
 				bytes += client.sendBytes(server.readBytes());
