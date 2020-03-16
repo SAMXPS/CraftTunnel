@@ -12,11 +12,11 @@ public enum ProxyMode {
 	PROXY_ONLY, 
 	
 	/**
-	 * Master and slave mode. On this mode, {@link TunnelServer} will listen for slave servers
+	 * Master and slave mode. On this mode, master {@link TunnelServer} will listen for slave servers
 	 * connections, then, once at least one slave server is connected, every incoming connection
 	 * will be tunneled to the slave server and the slave server will be responsible for creating
 	 * new connections to the remote hosts. 
 	 * */
-	MASTER_SLAVE;
+	MULTI_PROXY_TUNNEL;
 	
 }
