@@ -6,15 +6,17 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 
 /**
  * This will handle incoming packets from the connecting player and forward them
  * to the server linker.
  * */
+@RequiredArgsConstructor
 public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 
-	private RemoteServerConnector remote = RemoteServerConnector.newDefault();
+	private final ServerConnector remote;
 	private Channel serverChannel;
 	
 	@Override
