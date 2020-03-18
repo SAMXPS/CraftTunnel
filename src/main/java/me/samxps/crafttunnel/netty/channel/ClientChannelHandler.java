@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.netty;
+package me.samxps.crafttunnel.netty.channel;
 
 import java.util.logging.Level;
 
@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
+import me.samxps.crafttunnel.netty.connector.ServerConnector;
 
 /**
  * This will handle incoming packets from the connecting player and forward them

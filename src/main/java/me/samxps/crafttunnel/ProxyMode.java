@@ -1,6 +1,6 @@
 package me.samxps.crafttunnel;
 
-import me.samxps.crafttunnel.netty.TunnelServer;
+import me.samxps.crafttunnel.server.ProxyServer;
 
 public enum ProxyMode {
 

@@ -1,7 +1,5 @@
 package me.samxps.crafttunnel.netty.multi;
 
-import java.net.InetSocketAddress;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -9,13 +7,18 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import me.samxps.crafttunnel.netty.TunnelServerConnector;
+import me.samxps.crafttunnel.server.MasterServer;
 
 @RequiredArgsConstructor
-public class MasterHandler extends ChannelInboundHandlerAdapter implements MultiProxyHandler {
+/**
+ * MasterHandler will handle incoming connections from slave servers to the master server.
+ * Once a connection is made, master handler will perform initial handshake verification.
+ * After the handshake is complete, this handler will register the control channel from the
+ * slave server to the MasterServer.
+ * */
+public class MasterHandler extends ChannelInboundHandlerAdapter {
 
 	@Getter private final MasterServer parent;
 	private static final String MAGIC = "36782A5015779AC19CEAF2144939A7FA"; // md5("TunnelServer");
@@ -30,7 +33,7 @@ public class MasterHandler extends ChannelInboundHandlerAdapter implements Multi
 			
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
-				parent.removeHandler(MasterHandler.this);
+				parent.removeSlaveChannel(ch);
 			}
 		});
     }
@@ -38,47 +41,20 @@ public class MasterHandler extends ChannelInboundHandlerAdapter implements Multi
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     	ByteBuf buf = (ByteBuf) msg;
+    	String cmd = ProxyPacket.readCommand(buf);
+		ReferenceCountUtil.release(msg);
     	if (!handshake) {
-    		try {
-    			byte[] mg = new byte[32];
-    			buf.readBytes(mg);
-    			String resp = new String(mg);
-    			if (resp.equals(MAGIC)) {
-    				writeCommand(ctx.channel(), "HANDSHAKE_OK");
-    				handshake = true;
-    				parent.addHandler(this);
-    			}
-    			else ctx.close().sync();
-    		} finally {
-    			ReferenceCountUtil.release(msg);
+			if (cmd.equals(MAGIC)) {
+				ProxyPacket.writeCommand(ctx.channel(), "HANDSHAKE_OK");
+				handshake = true;
+				parent.addSlaveChannel(ctx.channel());
 			}
+			else ctx.close();
     	} else {
-    		onCommand(readCommand(buf));
-			ReferenceCountUtil.release(msg);
+    		parent.onCommand(ch, cmd);
     	}
     }
-    
-    public ChannelFuture newChannel(ChannelFuture incoming) {
-    	incoming.addListener(new ChannelFutureListener() {
-			
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				Channel r = future.channel();
-				requestCon(((InetSocketAddress) r.localAddress()).getPort());
-			}
-		});
-    	
-    	return incoming;
-    }
-    
-    private void requestCon(int master_port) {
-    	writeCommand(ch, "CONNECT " + master_port);
-    }
-    
-    private void onCommand(String cmd) {
-    	
-    }
-    
+  
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		cause.printStackTrace();
