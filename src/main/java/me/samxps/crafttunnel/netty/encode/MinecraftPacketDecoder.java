@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.netty;
+package me.samxps.crafttunnel.netty.encode;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 
-public class ToMinecraftPacketDecoder extends ByteToMessageDecoder {
+public class MinecraftPacketDecoder extends ByteToMessageDecoder {
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {

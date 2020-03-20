@@ -14,6 +14,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
+import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
+import me.samxps.crafttunnel.netty.encode.MinecraftPacketEncoder;
 
 @RequiredArgsConstructor
 public class DirectServerConnector implements ServerConnector {
@@ -31,7 +33,10 @@ public class DirectServerConnector implements ServerConnector {
 		 .channel(NioSocketChannel.class)
 		 .handler(new ChannelInitializer<SocketChannel>() {
 			 protected void initChannel(SocketChannel ch) throws Exception {
-				 ch.pipeline().addLast(new ServerChannelHandler(clientChannel));
+				 ch.pipeline().addLast(
+					new ServerChannelHandler(clientChannel), 
+					new MinecraftPacketEncoder()
+				 );
 			 };
 		});
 		

@@ -10,10 +10,43 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class MinecraftPacket {
+public class MinecraftPacket implements Cloneable {
 
 	private int packetID;
 	private ByteBuf data;
+	
+	public int readVarInt() {
+		return readVarInt(data);
+	}
+	
+	public void writeVarInt(int value) {
+		writeVarInt(value, data);
+	}
+	
+	public long radVarLong() {
+		return readVarLong(data);
+	}
+	
+	public void writeVarLong(long value) {
+		writeVarLong(value);
+	}
+	
+	public String readString() {
+		return readString(data);
+	}
+	
+	public void writeString(String str) {
+		writeString(str, data);
+	}
+	
+	public int readUnsignedShort() {
+		return data.readUnsignedShort();
+	}
+	
+	@Override
+	protected MinecraftPacket clone() {
+		return new MinecraftPacket(packetID, data.copy());
+	}
 	
 	public static int readVarInt(ByteBuf data) {
 	    int numRead = 0;

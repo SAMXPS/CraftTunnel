@@ -20,8 +20,12 @@ import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.ProxyMode;
 import me.samxps.crafttunnel.ServerType;
 import me.samxps.crafttunnel.ProxyConfiguration;
+import me.samxps.crafttunnel.netty.InitialHandler;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
+import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
 import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
+import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
+import me.samxps.crafttunnel.netty.encode.MinecraftPacketEncoder;
 
 /**
  * ProxyServer is the implementation of CraftTunnel using netty
@@ -55,7 +59,12 @@ public class ProxyServer implements Server{
 			ServerBootstrap gate = buildServer(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
-						ch.pipeline().addLast(new ClientChannelHandler(DirectServerConnector.newDefault()));
+						
+						ch.pipeline()
+						 .addLast(new MinecraftPacketDecoder(), 
+								  new InitialHandler(),
+								  new ClientChannelHandler(DirectServerConnector.newDefault()))
+						 .addLast(new MinecraftPacketEncoder());
 					}
 				 });
 			
