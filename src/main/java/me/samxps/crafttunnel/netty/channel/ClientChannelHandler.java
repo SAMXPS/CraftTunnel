@@ -29,6 +29,7 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 		});
 		
 		// Initiates the connection to the remote server and waits
+		// TODO: remove blocking opertation from this thread
 		ChannelFuture f = remote.init(ctx.channel()).sync(); 
 		
 		if (f.isSuccess()) {
