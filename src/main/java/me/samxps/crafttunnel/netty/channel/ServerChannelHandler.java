@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.netty;
+package me.samxps.crafttunnel.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

@@ -4,7 +4,7 @@ import java.util.logging.Logger;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import me.samxps.crafttunnel.netty.TunnelServer;
+import me.samxps.crafttunnel.server.ProxyServer;
 
 @RequiredArgsConstructor
 @Getter
@@ -17,13 +17,13 @@ public class CraftTunnel {
 	@Getter
 	private static CraftTunnel instance;
 	@Getter
-	private static TunnelServer server;
+	private static ProxyServer server;
 	@Getter
 	private static final Logger logger = Logger.getLogger("CraftTunnelLogger");
 	
 	public void init() throws Exception {
 		instance = this;
-		server = new TunnelServer(port);
+		server = new ProxyServer(new ProxyConfiguration().setBindPort(port));
 		server.run();
 	}
 	

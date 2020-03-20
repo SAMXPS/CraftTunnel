@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.netty;
+package me.samxps.crafttunnel.netty.connector;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -13,9 +13,10 @@ import io.netty.util.concurrent.Future;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
+import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
 
 @RequiredArgsConstructor
-public class RemoteServerConnector {
+public class DirectServerConnector implements ServerConnector {
 
 	@NonNull private String host;
 	@NonNull private Integer port;
@@ -45,12 +46,12 @@ public class RemoteServerConnector {
 	}
 	
 	/**
-	 * Creates a new instance of {@link RemoteServerConnector} using the current
+	 * Creates a new instance of {@link DirectServerConnector} using the current
 	 * host and port configuration of {@link CraftTunnel} instance.
 	 * */
-	public static RemoteServerConnector newDefault() {
+	public static DirectServerConnector newDefault() {
 		CraftTunnel main = CraftTunnel.getInstance();
-		return new RemoteServerConnector(main.getRemoteHost(), main.getRemotePort());
+		return new DirectServerConnector(main.getRemoteHost(), main.getRemotePort());
 	}
 	
 }
