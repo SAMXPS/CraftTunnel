@@ -33,10 +33,6 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 		
 		if (f.isSuccess()) {
 			serverChannel = f.channel();
-			
-			// TODO: Initial handshake and sending IP information of the player
-			// NOTE: This maybe will need to be wrapped inside Minecraft protocol packets
-			// Suggestion: use HAProxy protocol instead? http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 		} else {
 			// Closes client connection if the server connection failed
 			ctx.channel().close();
