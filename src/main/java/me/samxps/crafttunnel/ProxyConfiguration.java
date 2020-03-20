@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class TunnelConfiguration {
+public class ProxyConfiguration {
 
 	private int bindPort;
 	private String bindHost = null;

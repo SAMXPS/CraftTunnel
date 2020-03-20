@@ -19,40 +19,40 @@ import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.ProxyMode;
 import me.samxps.crafttunnel.ServerType;
-import me.samxps.crafttunnel.TunnelConfiguration;
+import me.samxps.crafttunnel.ProxyConfiguration;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
 import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
-import me.samxps.crafttunnel.netty.multi.SlaveHandler;
-import me.samxps.crafttunnel.netty.util.ServerBuilder;
 
 /**
  * ProxyServer is the implementation of CraftTunnel using netty
  * as the network connection manager.
  * ProxyServer will instantiate all the necessary servers, such
  * as {@link MasterServer} or {@link SlaveServer} depending on
- * the corresponding {@link TunnelConfiguration}.
+ * the corresponding {@link ProxyConfiguration}.
  * */
 @RequiredArgsConstructor
 public class ProxyServer implements Server{
 
-	@NonNull private TunnelConfiguration config;
+	@NonNull private ProxyConfiguration config;
 	private EventLoopGroup bossGroup;
 	private EventLoopGroup workerGroup;
-	private MasterServer master;
+	
+	private ServerBootstrap buildServer(ChannelInitializer<?> init) {
+		return new ServerBootstrap()
+				 .group(bossGroup, workerGroup)
+				 .channel(NioServerSocketChannel.class)
+				 .childHandler(init)
+				 .option(ChannelOption.SO_BACKLOG, 128)
+				 .childOption(ChannelOption.SO_KEEPALIVE, true);
+	}
 	
 	public ChannelFuture init() throws Exception {
 		bossGroup = new NioEventLoopGroup();
 		workerGroup = new NioEventLoopGroup();
 		
 		if (config.getServerType() == ServerType.MASTER) {
-			
-			if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
-				master = new MasterServer(this);
-				master.init().sync();
-			}
-			
-			ServerBootstrap gate = ServerBuilder.buildServer(bossGroup, workerGroup, 
-				new ChannelInitializer<SocketChannel>() {
+
+			ServerBootstrap gate = buildServer(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
 						ch.pipeline().addLast(new ClientChannelHandler(DirectServerConnector.newDefault()));

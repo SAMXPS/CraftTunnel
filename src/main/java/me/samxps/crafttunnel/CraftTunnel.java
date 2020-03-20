@@ -23,7 +23,7 @@ public class CraftTunnel {
 	
 	public void init() throws Exception {
 		instance = this;
-		server = new ProxyServer(new TunnelConfiguration().setBindPort(port));
+		server = new ProxyServer(new ProxyConfiguration().setBindPort(port));
 		server.run();
 	}
 	
