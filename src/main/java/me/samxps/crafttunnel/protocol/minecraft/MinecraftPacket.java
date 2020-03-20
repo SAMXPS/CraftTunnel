@@ -1,6 +1,10 @@
 package me.samxps.crafttunnel.protocol.minecraft;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.socket.nio.NioChannelOption;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -69,5 +73,17 @@ public class MinecraftPacket {
 	        }
 	        buf.writeByte(temp);
 	    } while (value != 0);
+	}
+	
+	public static String readString(ByteBuf data) {
+		int len = readVarInt(data);
+		byte[] str = new byte[len];
+		data.readBytes(str);
+		return new String(str, StandardCharsets.UTF_8);
+	}
+	
+	public static void writeString(String str, ByteBuf buf) {
+		writeVarInt(str.length(), buf);
+		buf.writeBytes(str.getBytes(StandardCharsets.UTF_8));
 	}
 }
