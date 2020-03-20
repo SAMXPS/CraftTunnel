@@ -20,9 +20,9 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 	private final ServerConnector remote;
 	private Channel serverChannel;
 	
+	
 	@Override
-	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		// channelActive is called when the connection is made and ready to generate traffic.
+	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 		
 		CraftTunnel.getLogger().log(Level.INFO, "[{0}] new connection from {1}", new Object[] {
 				"ClientChannelHandler", ctx.channel().remoteAddress().toString()

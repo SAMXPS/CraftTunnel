@@ -54,17 +54,14 @@ public class ProxyServer implements Server{
 		bossGroup = new NioEventLoopGroup();
 		workerGroup = new NioEventLoopGroup();
 		
-		if (config.getServerType() == ServerType.MASTER) {
+		if (config.getServerType() == ServerType.ENTRY_POINT) {
 
 			ServerBootstrap gate = buildServer(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
-						
-						ch.pipeline()
-						 .addLast(new MinecraftPacketDecoder(), 
-								  new InitialHandler(),
-								  new ClientChannelHandler(DirectServerConnector.newDefault()))
-						 .addLast(new MinecraftPacketEncoder());
+						ch.pipeline().addLast("decoder", new MinecraftPacketDecoder())
+						             .addLast("initial", new InitialHandler())
+						             .addLast("encoder", new MinecraftPacketEncoder());
 					}
 				 });
 			

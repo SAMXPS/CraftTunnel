@@ -15,7 +15,7 @@ public class ProxyConfiguration {
 	private String bindHost = null;
 	
 	private ProxyMode proxyMode = ProxyMode.PROXY_ONLY;
-	private ServerType serverType = ServerType.MASTER;
+	private ServerType serverType = ServerType.ENTRY_POINT;
 	
 	private String masterAddress = null;
 	private int masterPort = 25881;

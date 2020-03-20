@@ -2,6 +2,6 @@ package me.samxps.crafttunnel;
 
 public enum ServerType {
 
-	MASTER, SLAVE;
+	ENTRY_POINT, EXIT_POINT;
 	
 }
