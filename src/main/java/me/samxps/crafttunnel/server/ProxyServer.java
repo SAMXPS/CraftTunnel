@@ -41,11 +41,11 @@ public class ProxyServer implements Server{
 	}
 	
 	public ChannelFuture init() throws Exception {
-		bossGroup = new NioEventLoopGroup();
 		workerGroup = new NioEventLoopGroup();
 		
 		if (config.getServerType() == ServerType.ENTRY_POINT) {
-
+			bossGroup = new NioEventLoopGroup();
+			
 			ServerBootstrap gate = buildServer(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
@@ -64,7 +64,6 @@ public class ProxyServer implements Server{
 			return new Bootstrap()
 				.group(workerGroup)
 				.channel(NioSocketChannel.class)
-				.remoteAddress(config.getMasterAddress())
 				.handler(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
@@ -73,7 +72,7 @@ public class ProxyServer implements Server{
 			             			 .addLast("encoder", new MinecraftPacketEncoder());
 					}
 				})
-				.connect();
+				.connect(config.getMasterAddress());
 		}
 		
 		return null;
