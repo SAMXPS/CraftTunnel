@@ -64,9 +64,12 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 					}
 					
 					MagicPacket magic = MagicPacket.fromMinecraftPacket(p);
+
 					if (magic != null && magic.validateTimeCode()) {
 						active = false;
 						nextPipeline(ctx, "proxy", new ProxyEntryPointHandler());
+						ctx.channel().pipeline().remove(this);
+						return;
 					}
 				}
 			}			
