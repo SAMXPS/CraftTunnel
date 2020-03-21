@@ -1,9 +1,12 @@
 package me.samxps.crafttunnel.netty.channel;
 
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +22,7 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 
 	private final ServerConnector remote;
 	private Channel serverChannel;
-	
+	private Queue<Object> queue = new LinkedBlockingQueue<Object>();
 	
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
@@ -28,18 +31,36 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 				"ClientChannelHandler", ctx.channel().remoteAddress().toString()
 		});
 		
-		// Initiates the connection to the remote server and waits
-		// TODO: remove blocking opertation from this thread
-		ChannelFuture f = remote.init(ctx.channel()).sync(); 
+		// Initiates the connection to the remote server
+		ChannelFuture f = remote.init(ctx.channel())
+				.addListener(new ChannelFutureListener() {
+			
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+				if (!future.isSuccess()) {
+					// Closes client connection if the server connection failed
+					ctx.channel().close();
+				} else {
+					serverChannel.eventLoop().execute(new Runnable() {
+						
+						@Override
+						public void run() {	
+							// Once the connection to the server is made,
+							// send the queued messages.
+							while (!queue.isEmpty()) {
+								serverChannel.write(queue.poll());
+								serverChannel.flush();
+							}
+						}
+					});
+
+				}
+			}
+		}); 
 		
-		if (f.isSuccess()) {
-			serverChannel = f.channel();
-		} else {
-			// Closes client connection if the server connection failed
-			ctx.channel().close();
-		}
+		serverChannel = f.channel();
 		
-		super.channelActive(ctx); // TODO: verify if this super call is necessary
+		super.channelActive(ctx);
 	}
 	
 	@Override
@@ -47,15 +68,21 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 		// Closes the connection with the server
 		remote.exit();
 		
-		super.channelInactive(ctx); // TODO: verify if this super call is necessary
+		super.channelInactive(ctx);
 	}
 	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		// channelRead is called every time a message is received
 		
-		serverChannel.write(msg);
-		serverChannel.flush();
+		if (serverChannel.isActive()) {
+			serverChannel.write(msg);
+			serverChannel.flush();
+		} else {
+			// If the connection to the server is still pending, queue the messages up 
+			// for sending as soon as possible
+			queue.add(msg);
+		}
 	}
 	
 	@Override
