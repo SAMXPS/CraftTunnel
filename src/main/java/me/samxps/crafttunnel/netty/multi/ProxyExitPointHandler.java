@@ -16,6 +16,7 @@ import io.netty.util.AttributeKey;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.ProxyConfiguration;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
+import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
 import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
@@ -35,8 +36,9 @@ public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		// Sends magic packet to proxy entrypoint
 		proxyChannel = ctx.channel();
-		ctx.write(new MagicPacket().toMinecraftPacket());
-		ctx.flush();
+		ctx.channel().write(new MagicPacket().toMinecraftPacket());
+		ctx.channel().flush();
+		
 		super.channelActive(ctx);
 	}
 	
@@ -51,34 +53,31 @@ public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 				// discard
 			}
 		}
+
 		// TODO: release unknown messages ?
 	}
 	
-	private void handleWrapper(WrapperPacket w) {
+	private void handleWrapper(WrapperPacket w) throws Exception {
 		// TODO: map methods, direct access?
 		InetSocketAddress clientAddress = w.getClientAddress();
+		
 		if (w.getType() == WrapperPacketType.CONNECTION_START) {
 			
-			EmbeddedChannel ch = new EmbeddedChannel(
+			// The false,false means that the channel will be registered later
+			EmbeddedChannel ch = new EmbeddedChannel(false,false,
 				new ClientChannelHandler(DirectServerConnector.newDefault()),
 				new WrapperOutboundHandler(clientAddress, proxyChannel)
 			);
 			
+			// Add attributes before registering
 			ch.attr(PROXIED_CLIENT_ADDRESS).set(clientAddress);
+			ch.register();
 			
 			ch.closeFuture().addListener(new ChannelFutureListener() {
 				
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
 					virtual.remove(clientAddress);
-				}
-			});
-			
-			proxyChannel.eventLoop().register(ch).addListener(new ChannelFutureListener() {
-				
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					System.out.println("yay! " + future.isSuccess());
 				}
 			});
 			
