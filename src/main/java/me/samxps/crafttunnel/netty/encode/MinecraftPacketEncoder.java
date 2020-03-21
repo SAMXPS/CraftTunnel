@@ -10,11 +10,16 @@ public class MinecraftPacketEncoder extends MessageToByteEncoder<MinecraftPacket
 	
 	@Override
 	protected void encode(ChannelHandlerContext ctx, MinecraftPacket msg, ByteBuf out) throws Exception {
-		ByteBuf pidbuf = Unpooled.buffer();
+		encode(msg, out);
+	}
+	
+	public static void encode(MinecraftPacket msg, ByteBuf out) {
+		ByteBuf pidbuf = out.alloc().buffer();
 		MinecraftPacket.writeVarInt(msg.getPacketID(), pidbuf);
 		MinecraftPacket.writeVarInt(pidbuf.readableBytes() + msg.getData().readableBytes(), out);
 		out.writeBytes(pidbuf);
 		out.writeBytes(msg.getData());
 		pidbuf.release();
 	}
+	
 }
