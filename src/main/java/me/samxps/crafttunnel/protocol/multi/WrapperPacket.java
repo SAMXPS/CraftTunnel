@@ -41,7 +41,8 @@ public class WrapperPacket {
 		ByteBuf head = Unpooled.buffer();
 		MinecraftPacket.writeString(clientAddress.getAddress().getHostAddress(), head);
 		head.writeShort(clientAddress.getPort());
-		return new MinecraftPacket(packetID, head.writeBytes(data));
+		ByteBuf packetData = data == null ? head : head.writeBytes(data);
+		return new MinecraftPacket(packetID, packetData);
 	}
 	
 	public static enum WrapperPacketType {
