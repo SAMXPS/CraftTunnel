@@ -50,6 +50,7 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 					// Closes client connection if the server connection failed
 					ctx.channel().close();
 				} else {
+					if (serverChannel == null) serverChannel = future.channel();
 					serverChannel.eventLoop().execute(new Runnable() {
 						
 						@Override
