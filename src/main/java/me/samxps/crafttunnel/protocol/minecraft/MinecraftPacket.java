@@ -23,7 +23,7 @@ public class MinecraftPacket implements Cloneable {
 		writeVarInt(value, data);
 	}
 	
-	public long radVarLong() {
+	public long readVarLong() {
 		return readVarLong(data);
 	}
 	
@@ -44,7 +44,7 @@ public class MinecraftPacket implements Cloneable {
 	}
 	
 	@Override
-	protected MinecraftPacket clone() {
+	public MinecraftPacket clone() {
 		return new MinecraftPacket(packetID, data.copy());
 	}
 	
