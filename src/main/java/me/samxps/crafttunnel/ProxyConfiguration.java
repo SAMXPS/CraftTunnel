@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class ProxyConfiguration {
+public class ProxyConfiguration implements Cloneable {
 
 	private int bindPort;
 	private String bindHost = null;

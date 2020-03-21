@@ -11,10 +11,10 @@ import me.samxps.crafttunnel.netty.channel.ProxyChannelHandler;
 import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
 import me.samxps.crafttunnel.netty.connector.ServerConnector;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
-import me.samxps.crafttunnel.protocol.MagicPacket;
 import me.samxps.crafttunnel.protocol.minecraft.Handshake;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.minecraft.ProtocolState;
+import me.samxps.crafttunnel.protocol.multi.MagicPacket;
 
 @RequiredArgsConstructor
 public class InitialHandler extends ChannelInboundHandlerAdapter{
