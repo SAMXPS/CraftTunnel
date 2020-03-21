@@ -6,7 +6,11 @@ import java.net.InetSocketAddress;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.util.AttributeKey;
 import lombok.RequiredArgsConstructor;
+import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
+import me.samxps.crafttunnel.netty.multi.ExitPointHandler;
 
 @RequiredArgsConstructor
 public class HAProxyIdentifier extends ChannelInboundHandlerAdapter {
@@ -34,8 +38,9 @@ public class HAProxyIdentifier extends ChannelInboundHandlerAdapter {
 	
 	public static HAProxyIdentifier fromClientChannel(Channel clientChannel, String serverHost, int serverPort) {
 		return new HAProxyIdentifier(
-				 ((InetSocketAddress) clientChannel.remoteAddress()), 
-				 new InetSocketAddress(serverHost, serverPort));
+			ClientChannelHandler.getClientAddress(clientChannel), 
+			new InetSocketAddress(serverHost, serverPort)
+		);
 	}
 	
 }

@@ -1,5 +1,6 @@
 package me.samxps.crafttunnel.netty.channel;
 
+import java.net.InetSocketAddress;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -9,9 +10,11 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.embedded.EmbeddedChannel;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.netty.connector.ServerConnector;
+import me.samxps.crafttunnel.netty.multi.ExitPointHandler;
 
 /**
  * This will handle incoming packets from the connecting player and forward them
@@ -24,11 +27,17 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 	private Channel serverChannel;
 	private Queue<Object> queue = new LinkedBlockingQueue<Object>();
 	
+	public static InetSocketAddress getClientAddress(Channel ch) {
+		if (ch instanceof EmbeddedChannel) {
+			return ch.attr(ExitPointHandler.PROXIED_CLIENT_ADDRESS).get();
+		} else return (InetSocketAddress) ch.remoteAddress();
+	}
+	
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 		
 		CraftTunnel.getLogger().log(Level.INFO, "[{0}] new connection from {1}", new Object[] {
-				"ClientChannelHandler", ctx.channel().remoteAddress().toString()
+				"ClientChannelHandler", getClientAddress(ctx.channel()).toString()
 		});
 		
 		// Initiates the connection to the remote server
