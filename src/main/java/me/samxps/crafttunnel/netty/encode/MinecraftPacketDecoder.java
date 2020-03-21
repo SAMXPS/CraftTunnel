@@ -17,12 +17,19 @@ public class MinecraftPacketDecoder extends ByteToMessageDecoder {
 			in.readerIndex(ix);
 			return;
 		}
+		out.add(decode(l, in));
+	}
+
+	public static MinecraftPacket decode(int l, ByteBuf in) {
 		// TODO: make these index calculations prettier 
 		int a = in.readerIndex();
 		int packetID = MinecraftPacket.readVarInt(in);
 		int b = in.readerIndex();
-		out.add(new MinecraftPacket(packetID, in.readBytes(l + (a-b))));
-		
+		return new MinecraftPacket(packetID, in.readBytes(l + (a-b)));
+	}
+	
+	public static MinecraftPacket decode(ByteBuf in) {
+		return decode(MinecraftPacket.readVarInt(in), in);
 	}
 	
 }
