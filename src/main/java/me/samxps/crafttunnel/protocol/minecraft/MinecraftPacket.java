@@ -28,7 +28,7 @@ public class MinecraftPacket implements Cloneable {
 	}
 	
 	public void writeVarLong(long value) {
-		writeVarLong(value);
+		writeVarLong(value, data);
 	}
 	
 	public String readString() {
