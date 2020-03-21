@@ -1,12 +1,17 @@
 package me.samxps.crafttunnel.netty;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.ProxyConfiguration;
+import me.samxps.crafttunnel.ProxyMode;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
+import me.samxps.crafttunnel.netty.channel.ProxyChannelHandler;
 import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
+import me.samxps.crafttunnel.netty.connector.ServerConnector;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
+import me.samxps.crafttunnel.protocol.MagicPacket;
 import me.samxps.crafttunnel.protocol.minecraft.Handshake;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.minecraft.ProtocolState;
@@ -14,12 +19,12 @@ import me.samxps.crafttunnel.protocol.minecraft.ProtocolState;
 @RequiredArgsConstructor
 public class InitialHandler extends ChannelInboundHandlerAdapter{
 
-	//private final ProxyConfiguration config;
+	private final ProxyConfiguration config;
 	private boolean active = true;
 	private ProtocolState state = ProtocolState.HANDSHAKE;
 	
 	@Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {		
 		if (active && msg instanceof MinecraftPacket) {
 			MinecraftPacket p = (MinecraftPacket) msg;
 			
@@ -37,7 +42,31 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 							ctx.close();
 							return;
 						}
-						ctx.channel().pipeline().addAfter("initial", "client", new ClientChannelHandler(DirectServerConnector.newDefault()));
+						
+						ServerConnector connector = getServerConnector();
+						
+						if (connector != null)
+							nextPipeline(
+								ctx, "client", 
+								new ClientChannelHandler(connector)
+							);
+						else ctx.close();
+					}
+				}
+				
+				// Magic packet for multi-proxy mode
+				if (p.getPacketID() == MagicPacket.getMagicPacketID()) {
+					
+					// Verify if multi-proxy is enabled
+					if (config.getProxyMode() != ProxyMode.MULTI_PROXY_TUNNEL) {
+						ctx.close();
+						return;
+					}
+					
+					MagicPacket magic = MagicPacket.fromMinecraftPacket(p);
+					if (magic != null && magic.validateTimeCode()) {
+						active = false;
+						nextPipeline(ctx, "proxy", new ProxyChannelHandler());
 					}
 				}
 			}			
@@ -55,6 +84,19 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 			ctx.channel().pipeline().remove(this);
 			ctx.channel().pipeline().remove(MinecraftPacketDecoder.class);
 		}
+	}
+	
+	private void nextPipeline(ChannelHandlerContext ctx, String handlerName, ChannelHandler handler) {
+		ctx.channel().pipeline().addAfter("initial", handlerName, handler);
+	}
+	
+	private ServerConnector getServerConnector() {
+		if (config.getProxyMode() == ProxyMode.PROXY_ONLY) {
+			return DirectServerConnector.newDefault();
+		} else if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
+			return ProxyChannelHandler.generateConnector();
+		}
+		return null;
 	}
 	
 	@Override

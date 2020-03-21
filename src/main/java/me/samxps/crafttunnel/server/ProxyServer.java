@@ -1,8 +1,5 @@
 package me.samxps.crafttunnel.server;
 
-import java.util.logging.Level;
-
-import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -11,28 +8,18 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import me.samxps.crafttunnel.CraftTunnel;
-import me.samxps.crafttunnel.ProxyMode;
-import me.samxps.crafttunnel.ServerType;
 import me.samxps.crafttunnel.ProxyConfiguration;
+import me.samxps.crafttunnel.ServerType;
 import me.samxps.crafttunnel.netty.InitialHandler;
-import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
-import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
-import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketEncoder;
 
 /**
  * ProxyServer is the implementation of CraftTunnel using netty
  * as the network connection manager.
- * ProxyServer will instantiate all the necessary servers, such
- * as {@link MasterServer} or {@link SlaveServer} depending on
- * the corresponding {@link ProxyConfiguration}.
  * */
 @RequiredArgsConstructor
 public class ProxyServer implements Server{
@@ -60,7 +47,7 @@ public class ProxyServer implements Server{
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
 						ch.pipeline().addLast("decoder", new MinecraftPacketDecoder())
-						             .addLast("initial", new InitialHandler())
+						             .addLast("initial", new InitialHandler(config))
 						             .addLast("encoder", new MinecraftPacketEncoder());
 					}
 				 });
