@@ -1,12 +1,14 @@
 package me.samxps.crafttunnel.netty.multi;
 
 import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.logging.Level;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -58,7 +60,7 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg instanceof MinecraftPacket) {
 			MinecraftPacket p = (MinecraftPacket) msg;
-			
+
 			if (p.getPacketID() == WrapperPacket.getPacketID()) {
 				handlePacket(WrapperPacket.decode(p));
 			}
@@ -90,7 +92,16 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 		
 		virtual.put(clientAddress, ch);
 		
-		return proxyChannel.eventLoop().register(ch);
+		proxyChannel.write(
+			new WrapperPacket(
+				clientAddress,
+				WrapperPacketType.CONNECTION_START,
+				null
+			).encode()
+		);
+		proxyChannel.flush();
+			
+		return ch.newSucceededFuture();
 	}
 	
 	/**
@@ -98,6 +109,7 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 	 * to send data trough the multiproxy tunnel
 	 * */
 	public static ServerConnector generateConnector() {
+		if (instances.size() == 0) return null;
 		ProxyEntryPointHandler handler = instances.iterator().next();
 		return new ServerConnector() {
 			
