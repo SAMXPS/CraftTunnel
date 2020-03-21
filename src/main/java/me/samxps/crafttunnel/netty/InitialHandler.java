@@ -7,10 +7,10 @@ import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.ProxyConfiguration;
 import me.samxps.crafttunnel.ProxyMode;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
-import me.samxps.crafttunnel.netty.channel.ProxyChannelHandler;
 import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
 import me.samxps.crafttunnel.netty.connector.ServerConnector;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
+import me.samxps.crafttunnel.netty.multi.ProxyEntryPointHandler;
 import me.samxps.crafttunnel.protocol.minecraft.Handshake;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.minecraft.ProtocolState;
@@ -66,7 +66,7 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 					MagicPacket magic = MagicPacket.fromMinecraftPacket(p);
 					if (magic != null && magic.validateTimeCode()) {
 						active = false;
-						nextPipeline(ctx, "proxy", new ProxyChannelHandler());
+						nextPipeline(ctx, "proxy", new ProxyEntryPointHandler());
 					}
 				}
 			}			
@@ -94,7 +94,7 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 		if (config.getProxyMode() == ProxyMode.PROXY_ONLY) {
 			return DirectServerConnector.newDefault();
 		} else if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
-			return ProxyChannelHandler.generateConnector();
+			return ProxyEntryPointHandler.generateConnector();
 		}
 		return null;
 	}

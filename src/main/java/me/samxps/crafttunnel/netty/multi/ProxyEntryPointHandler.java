@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.netty.channel;
+package me.samxps.crafttunnel.netty.multi;
 
 import java.util.HashSet;
 import java.util.logging.Level;
@@ -11,12 +11,12 @@ import me.samxps.crafttunnel.ServerType;
 import me.samxps.crafttunnel.netty.connector.ServerConnector;
 
 /**
- * {@link ProxyChannelHandler} will be responsible for sending and receiving
+ * {@link ProxyEntryPointHandler} will be responsible for sending and receiving
  * data from remote {@link ServerType#EXIT_POINT}.
  * */
-public class ProxyChannelHandler extends ChannelInboundHandlerAdapter {
+public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 
-	private static HashSet<ProxyChannelHandler> instances = new HashSet<ProxyChannelHandler>();
+	private static HashSet<ProxyEntryPointHandler> instances = new HashSet<ProxyEntryPointHandler>();
 	private Channel proxyChannel;
 	
 	private void info(String msg, Object data) {

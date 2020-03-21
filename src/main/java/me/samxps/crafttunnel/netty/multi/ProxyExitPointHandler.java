@@ -22,7 +22,7 @@ import me.samxps.crafttunnel.protocol.multi.WrapperPacket;
 import me.samxps.crafttunnel.protocol.multi.WrapperPacket.WrapperPacketType;
 
 @RequiredArgsConstructor
-public class ExitPointHandler extends ChannelInboundHandlerAdapter {
+public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 
 	private final ProxyConfiguration config;
 	private HashMap<InetSocketAddress, Channel> virtual = new HashMap<InetSocketAddress, Channel>();

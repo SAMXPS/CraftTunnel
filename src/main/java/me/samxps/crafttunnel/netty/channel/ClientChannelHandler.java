@@ -14,7 +14,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.netty.connector.ServerConnector;
-import me.samxps.crafttunnel.netty.multi.ExitPointHandler;
+import me.samxps.crafttunnel.netty.multi.ProxyExitPointHandler;
 
 /**
  * This will handle incoming packets from the connecting player and forward them
@@ -29,7 +29,7 @@ public class ClientChannelHandler extends ChannelInboundHandlerAdapter {
 	
 	public static InetSocketAddress getClientAddress(Channel ch) {
 		if (ch instanceof EmbeddedChannel) {
-			return ch.attr(ExitPointHandler.PROXIED_CLIENT_ADDRESS).get();
+			return ch.attr(ProxyExitPointHandler.PROXIED_CLIENT_ADDRESS).get();
 		} else return (InetSocketAddress) ch.remoteAddress();
 	}
 	

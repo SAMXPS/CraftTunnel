@@ -18,7 +18,7 @@ import me.samxps.crafttunnel.ServerType;
 import me.samxps.crafttunnel.netty.InitialHandler;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketEncoder;
-import me.samxps.crafttunnel.netty.multi.ExitPointHandler;
+import me.samxps.crafttunnel.netty.multi.ProxyExitPointHandler;
 
 /**
  * ProxyServer is the implementation of CraftTunnel using netty
@@ -69,7 +69,7 @@ public class ProxyServer implements Server{
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
 						ch.pipeline().addLast("decoder", new MinecraftPacketDecoder())
-			             			 .addLast("exit",    new ExitPointHandler(config))
+			             			 .addLast("exit",    new ProxyExitPointHandler(config))
 			             			 .addLast("encoder", new MinecraftPacketEncoder());
 					}
 				})
