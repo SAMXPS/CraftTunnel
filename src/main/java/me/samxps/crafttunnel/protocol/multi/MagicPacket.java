@@ -8,6 +8,12 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 
+/**
+ * A MagicPacket will be sent to initiate multi-proxy tunnel mode.
+ * for now, it only uses a custom {@link MagicPacket#magicPacketID}
+ * and a timeCode generated from current 10sec time. 
+ * TODO: Encryption settings
+ * */
 @RequiredArgsConstructor
 public class MagicPacket {
 	
