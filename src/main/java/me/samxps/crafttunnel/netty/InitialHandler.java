@@ -4,6 +4,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.RequiredArgsConstructor;
+import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.ProxyConfiguration;
 import me.samxps.crafttunnel.ProxyMode;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
@@ -69,6 +70,9 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 						active = false;
 						nextPipeline(ctx, "proxy", new ProxyEntryPointHandler());
 						ctx.channel().pipeline().remove(this);
+						return;
+					} else {
+						ctx.close();
 						return;
 					}
 				}
