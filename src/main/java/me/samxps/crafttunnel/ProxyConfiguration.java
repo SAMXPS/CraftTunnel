@@ -29,7 +29,7 @@ public class ProxyConfiguration implements Cloneable {
 	public InetSocketAddress getMasterAddress() {
 		if (masterAddress == null)
 			return new InetSocketAddress(masterPort);
-		return new InetSocketAddress(masterPort);
+		return new InetSocketAddress(masterAddress, masterPort);
 	}
 	
 }

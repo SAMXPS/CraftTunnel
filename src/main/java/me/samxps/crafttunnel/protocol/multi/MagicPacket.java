@@ -45,7 +45,7 @@ public class MagicPacket {
 	
 	public MinecraftPacket toMinecraftPacket() {
 		ByteBuf b = Unpooled.buffer();
-		MinecraftPacket.writeVarLong(magicPacketID, b);
+		MinecraftPacket.writeVarLong(timeCode, b);
 		return new MinecraftPacket(magicPacketID, b);
 	}
 	
