@@ -20,6 +20,10 @@ public class ProxyConfiguration implements Cloneable {
 	private String masterAddress = null;
 	private int masterPort = 25881;
 	
+	private boolean HAProxyHeaderEnabled = true;
+	private String serverHost = "localhost";
+	private int serverPort = 25565;
+	
 	public InetSocketAddress getBindAddress() {
 		if (bindHost == null)
 			return new InetSocketAddress(bindPort);
@@ -30,6 +34,12 @@ public class ProxyConfiguration implements Cloneable {
 		if (masterAddress == null)
 			return new InetSocketAddress(masterPort);
 		return new InetSocketAddress(masterAddress, masterPort);
+	}
+	
+	public InetSocketAddress getServerAddress() {
+		if (masterAddress == null)
+			return new InetSocketAddress(serverPort);
+		return new InetSocketAddress(serverHost, serverPort);
 	}
 	
 }
