@@ -2,6 +2,8 @@ package me.samxps.crafttunnel.netty.multi;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -10,15 +12,16 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.channel.local.LocalChannel;
-import io.netty.util.AttributeKey;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.ProxyConfiguration;
-import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
-import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
-import me.samxps.crafttunnel.netty.connector.DirectServerConnector;
-import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
+import me.samxps.crafttunnel.netty.HAProxyIdentifier;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.multi.MagicPacket;
 import me.samxps.crafttunnel.protocol.multi.WrapperPacket;
@@ -28,9 +31,20 @@ import me.samxps.crafttunnel.protocol.multi.WrapperPacket.WrapperPacketType;
 public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 
 	private final ProxyConfiguration config;
-	private HashMap<InetSocketAddress, EmbeddedChannel> virtual = new HashMap<InetSocketAddress, EmbeddedChannel>();
-	public static AttributeKey<InetSocketAddress> PROXIED_CLIENT_ADDRESS = AttributeKey.valueOf("PROXIED_CLIENT_ADDRESS");
+	private HashMap<InetSocketAddress, Channel> servers = new HashMap<InetSocketAddress, Channel>();
+	private HashMap<InetSocketAddress, Queue<Object>> queue = new HashMap<InetSocketAddress, Queue<Object>>();
 	private Channel proxyChannel;
+	private EventLoopGroup connectorEventLoop;
+	
+	@Override
+	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+		connectorEventLoop = new NioEventLoopGroup();
+	}
+	
+	@Override
+	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+		connectorEventLoop.shutdownGracefully();
+	}
 	
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -62,39 +76,86 @@ public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 		InetSocketAddress clientAddress = w.getClientAddress();
 		
 		if (w.getType() == WrapperPacketType.CONNECTION_START) {
+			InetSocketAddress serverAddress = config.getServerAddress();
 			
-			// The false,false means that the channel will be registered later
-			EmbeddedChannel ch = new EmbeddedChannel(false,false,
-				new ClientChannelHandler(DirectServerConnector.newDefault()),
-				new WrapperOutboundHandler(clientAddress, proxyChannel)
-			);
+			Bootstrap b = new Bootstrap();
+			b.group(connectorEventLoop)
+			 .option(ChannelOption.SO_KEEPALIVE, true)
+			 .channel(NioSocketChannel.class)
+			 .handler(new ChannelInitializer<SocketChannel>() {
+				 protected void initChannel(SocketChannel ch) throws Exception {
+					 if (config.isHAProxyHeaderEnabled()) {
+						 ch.pipeline().addLast(new HAProxyIdentifier(clientAddress, serverAddress));
+					 }
+					 ch.pipeline().addLast(
+						new WrapperInboundHandler(clientAddress, proxyChannel)
+					 );
+
+				 };
+			});
 			
-			// Add attributes before registering
-			ch.attr(PROXIED_CLIENT_ADDRESS).set(clientAddress);
-			ch.register();
+			ChannelFuture f = b.connect(config.getServerHost(), config.getServerPort());
+			servers.put(clientAddress, f.channel());
 			
-			ch.closeFuture().addListener(new ChannelFutureListener() {
+			f.addListener(new ChannelFutureListener() {
 				
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
-					virtual.remove(clientAddress);
+					if (future.isSuccess()) {
+						future.channel().eventLoop().execute(new Runnable() {
+							
+							@Override
+							public void run() {
+								if (queue.containsKey(clientAddress)) {
+									Queue<Object> queue = ProxyExitPointHandler.this.queue.get(clientAddress);
+									while (!queue.isEmpty()) {
+										future.channel().write(queue.poll());
+										future.channel().flush();
+									}
+								}
+								queue.remove(clientAddress);								
+							}
+						});
+					} else {
+						queue.remove(clientAddress);	
+					}
 				}
 			});
 			
-			virtual.put(clientAddress, ch);
+			f.channel().closeFuture().addListener(new ChannelFutureListener() {
+				
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					servers.remove(clientAddress);
+					System.out.println("closed!");
+				}
+			});
+
 		} else {
-			EmbeddedChannel vchannel = virtual.get(clientAddress);
+			Channel remote = servers.get(clientAddress);
 			
-			if (vchannel == null) return;
+			if (remote == null) return;
 			
 			if (w.getType() == WrapperPacketType.CONNECTION_CLOSE) {
-				vchannel.close();
+				remote.close();
 			} else if (w.getType() == WrapperPacketType.DATA_BYTES) {
-				vchannel.writeOneInbound(w.getData());
+				sendData(clientAddress, remote, w.getData());
 			} else if (w.getType() == WrapperPacketType.DATA_PACKET) {
 				// Should we decode the packet ?
-				vchannel.writeOneInbound(w.getData());
+				sendData(clientAddress, remote, w.getData());
 			}
+		}
+	}
+	
+	private void sendData(InetSocketAddress client, Channel server, Object data) {
+		if (server.isActive()) {
+			server.write(data);
+			server.flush();
+		} else {
+			if (!queue.containsKey(client)) {
+				queue.put(client, new LinkedBlockingQueue<Object>());
+			}
+			queue.get(client).add(data);
 		}
 	}
 	
