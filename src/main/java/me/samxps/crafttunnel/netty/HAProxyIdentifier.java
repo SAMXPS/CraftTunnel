@@ -19,7 +19,7 @@ public class HAProxyIdentifier extends ChannelInboundHandlerAdapter {
 	private final InetSocketAddress clientAddress;
 	private final InetSocketAddress serverAddress;
 	
-	private String getHAProxyHeader() {
+	private static String getHAProxyHeader(InetSocketAddress clientAddress, InetSocketAddress serverAddress) {
 		return String.format("PROXY %s %s %s %d %d\r\n",
 				clientAddress.getAddress() instanceof Inet4Address ? "TCP4" : "TCP6",
 				clientAddress.getAddress().getHostAddress(),
@@ -31,10 +31,14 @@ public class HAProxyIdentifier extends ChannelInboundHandlerAdapter {
 	
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		String h = getHAProxyHeader();
-		ctx.channel().write(ctx.alloc().buffer(h.length()).writeBytes(h.getBytes()));	
+		writeIndentifier(ctx.channel(), clientAddress, serverAddress);
 		super.channelActive(ctx);
 		ctx.pipeline().remove(this);
+	}
+	
+	public static void writeIndentifier(Channel ch, InetSocketAddress clientAddress, InetSocketAddress serverAddress) {
+		String h = getHAProxyHeader(clientAddress, serverAddress);
+		ch.write(ch.alloc().buffer(h.length()).writeBytes(h.getBytes()));	
 	}
 	
 	public static HAProxyIdentifier fromClientChannel(Channel clientChannel, String serverHost, int serverPort) {
