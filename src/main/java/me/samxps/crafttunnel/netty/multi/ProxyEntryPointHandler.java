@@ -11,7 +11,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.local.LocalChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.Future;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.ServerType;
@@ -33,16 +36,27 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 	private HashMap<InetSocketAddress, EmbeddedChannel> virtual = new HashMap<InetSocketAddress, EmbeddedChannel>();
 	
 	private Channel proxyChannel;
+	private EventLoopGroup eventLoop;
 	
-	private void info(String msg, Object data) {
+	private static void info(String msg, Object data) {
 		CraftTunnel.getLogger().log(Level.INFO, "[ProxyHandler] " + msg, data);
 	}
 	
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+		ctx.channel().deregister().addListener(new ChannelFutureListener() {
+			
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+				eventLoop = new NioEventLoopGroup();
+				eventLoop.register(future.channel()).sync();
+			}
+		});
+
 		instances.add(this);
 		this.proxyChannel = ctx.channel();
 		info("Remote proxy exit point {0} connected.", ctx.channel().remoteAddress().toString());
+		info("Current handler count: {0}", instances.size());
 	}
 	
 	@Override
@@ -82,7 +96,7 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 	
-	private ChannelFuture newVirtualConnection(Channel clientChannel) {
+	private ChannelFuture newVirtualConnection(Channel clientChannel) throws Exception {
 		InetSocketAddress clientAddress = ClientChannelHandler.getClientAddress(clientChannel);
 		
 		EmbeddedChannel ch = new EmbeddedChannel(
@@ -91,6 +105,14 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 		);
 		
 		virtual.put(clientAddress, ch);
+
+		ch.closeFuture().addListener(new ChannelFutureListener() {
+			
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+				virtual.remove(clientAddress);
+			}
+		});
 		
 		proxyChannel.write(
 			new WrapperPacket(
@@ -100,8 +122,27 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 			).encode()
 		);
 		proxyChannel.flush();
-			
+		
 		return ch.newSucceededFuture();
+	}
+	
+	public int getScore() {
+		return virtual.size();
+	}
+	
+	/**
+	 * Returns the handler with the lowest number of connections
+	 * */
+	public static ProxyEntryPointHandler loadBalance() {
+		ProxyEntryPointHandler best = null;
+		
+		for (ProxyEntryPointHandler s : instances) {
+			if (best == null || s.getScore() < best.getScore()) {
+				best = s;
+			} 
+		}
+		
+		return best;
 	}
 	
 	/**
@@ -109,8 +150,9 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 	 * to send data trough the multiproxy tunnel
 	 * */
 	public static ServerConnector generateConnector() {
-		if (instances.size() == 0) return null;
-		ProxyEntryPointHandler handler = instances.iterator().next();
+		ProxyEntryPointHandler handler = loadBalance();
+		if (handler == null) return null;
+		
 		return new ServerConnector() {
 			
 			private Channel ch;
@@ -119,6 +161,13 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 			public ChannelFuture init(Channel clientChannel) throws Exception {
 				ChannelFuture f = handler.newVirtualConnection(clientChannel);
 				this.ch = f.channel();
+				clientChannel.closeFuture().addListener(new ChannelFutureListener() {
+					
+					@Override
+					public void operationComplete(ChannelFuture future) throws Exception {
+						f.channel().close();
+					}
+				});
 				return f;
 			}
 			
