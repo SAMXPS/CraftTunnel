@@ -18,6 +18,18 @@ public class WrapperInboundHandler extends ChannelInboundHandlerAdapter{
 	private final Channel proxyChannel;
 	
 	@Override
+	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+		proxyChannel.write(
+			new WrapperPacket(
+				clientAddress,
+				WrapperPacketType.CONNECTION_START,
+				null
+			).encode()
+		);
+		proxyChannel.flush();
+	}
+	
+	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		ByteBuf buf;
 		if (msg instanceof ByteBuf) {
