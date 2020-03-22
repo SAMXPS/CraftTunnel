@@ -65,7 +65,8 @@ public class MinecraftPacket implements Cloneable {
 
 	    return result;
 	}
-	
+
+	// TODO: verify why this is not working properly
 	public static long readVarLong(ByteBuf data) {
 	    int numRead = 0;
 	    long result = 0;
@@ -96,6 +97,7 @@ public class MinecraftPacket implements Cloneable {
 	    } while (value != 0);
 	}
 	
+	// TODO: verify why this is not working properly
 	public static void writeVarLong(long value, ByteBuf buf) {
 	    do {
 	        byte temp = (byte)(value & 0b01111111);

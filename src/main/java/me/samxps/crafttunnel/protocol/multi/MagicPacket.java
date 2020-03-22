@@ -36,7 +36,7 @@ public class MagicPacket {
 	public static MagicPacket fromMinecraftPacket(MinecraftPacket p) {
 		if (p.getPacketID() == magicPacketID) {
 			p = p.clone();
-			long timeCode = p.readVarLong();
+			long timeCode = p.getData().readLong();
 			p.getData().release();
 			return new MagicPacket(timeCode);
 		}
@@ -44,8 +44,7 @@ public class MagicPacket {
 	}
 	
 	public MinecraftPacket toMinecraftPacket() {
-		ByteBuf b = Unpooled.buffer();
-		MinecraftPacket.writeVarLong(timeCode, b);
+		ByteBuf b = Unpooled.buffer().writeLong(timeCode);
 		return new MinecraftPacket(magicPacketID, b);
 	}
 	
