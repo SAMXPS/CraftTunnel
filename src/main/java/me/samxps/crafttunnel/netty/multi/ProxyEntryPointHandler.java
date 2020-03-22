@@ -102,7 +102,7 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 		
 		InetSocketAddress clientAddress = getClientAddress(clientChannel);
 		
-		clientChannel.pipeline().addAfter("decoder", "wrapper", new WrapperInboundHandler(
+		clientChannel.pipeline().addAfter("initial", "wrapper", new WrapperInboundHandler(
 				clientAddress, instance.proxyChannel));
 
 		
