@@ -44,14 +44,15 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 							return;
 						}
 						
-						ServerConnector connector = getServerConnector();
-						
-						if (connector != null)
+						if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
+							if (!ProxyEntryPointHandler.handleClientChannel(ctx.channel()))
+								ctx.close();
+						} else {
 							nextPipeline(
 								ctx, "client", 
-								new ClientChannelHandler(connector)
+								new ClientChannelHandler(DirectServerConnector.newDefault())
 							);
-						else ctx.close();
+						}
 					}
 				}
 				
@@ -95,15 +96,6 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	
 	private void nextPipeline(ChannelHandlerContext ctx, String handlerName, ChannelHandler handler) {
 		ctx.channel().pipeline().addAfter("initial", handlerName, handler);
-	}
-	
-	private ServerConnector getServerConnector() {
-		if (config.getProxyMode() == ProxyMode.PROXY_ONLY) {
-			return DirectServerConnector.newDefault();
-		} else if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
-			return ProxyEntryPointHandler.generateConnector();
-		}
-		return null;
 	}
 	
 	@Override
