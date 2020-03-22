@@ -1,7 +1,6 @@
 package me.samxps.crafttunnel.netty.multi;
 
 import java.net.InetSocketAddress;
-import java.net.ProxySelector;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.logging.Level;
@@ -12,16 +11,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.concurrent.Future;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.ServerType;
-import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
-import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
-import me.samxps.crafttunnel.netty.connector.ServerConnector;
-import me.samxps.crafttunnel.netty.encode.MinecraftPacketEncoder;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.multi.WrapperPacket;
 import me.samxps.crafttunnel.protocol.multi.WrapperPacket.WrapperPacketType;
@@ -33,7 +25,7 @@ import me.samxps.crafttunnel.protocol.multi.WrapperPacket.WrapperPacketType;
 public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 
 	private static HashSet<ProxyEntryPointHandler> instances = new HashSet<ProxyEntryPointHandler>();
-	private HashMap<InetSocketAddress, EmbeddedChannel> virtual = new HashMap<InetSocketAddress, EmbeddedChannel>();
+	private HashMap<InetSocketAddress, Channel> clients = new HashMap<InetSocketAddress, Channel>();
 	
 	private Channel proxyChannel;
 	private EventLoopGroup eventLoop;
@@ -82,52 +74,49 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 	}
 	
 	private void handlePacket(WrapperPacket w) {
-		EmbeddedChannel vchannel = virtual.get(w.getClientAddress());
+		Channel clientChannel = clients.get(w.getClientAddress());
 		
-		if (vchannel == null)
+		if (clientChannel == null)
 			 return;
 		
 		if (w.getType() == WrapperPacketType.CONNECTION_CLOSE) {
-			vchannel.close();
+			clientChannel.close();
 		} else if (w.getType() == WrapperPacketType.DATA_BYTES) {
-			vchannel.writeOneInbound(w.getData());
+			clientChannel.write(w.getData());
+			clientChannel.flush();
 		} else if (w.getType() == WrapperPacketType.DATA_PACKET) {
-			vchannel.writeOneInbound(w.getData());
+			clientChannel.write(w.getData());
+			clientChannel.flush();
 		}
 	}
 	
-	private ChannelFuture newVirtualConnection(Channel clientChannel) throws Exception {
-		InetSocketAddress clientAddress = ClientChannelHandler.getClientAddress(clientChannel);
+	public int getScore() {
+		return clients.size();
+	}
+	
+	
+	public static boolean handleClientChannel(Channel clientChannel) {
+		ProxyEntryPointHandler instance = loadBalance();
+		if (instance == null)
+			return false;
 		
-		EmbeddedChannel ch = new EmbeddedChannel(
-				new ServerChannelHandler(clientChannel), 
-				new WrapperOutboundHandler(clientAddress, proxyChannel)
-		);
+		InetSocketAddress clientAddress = getClientAddress(clientChannel);
 		
-		virtual.put(clientAddress, ch);
+		clientChannel.pipeline().addAfter("initial", "wrapper", new WrapperInboundHandler(
+				clientAddress, instance.proxyChannel));
 
-		ch.closeFuture().addListener(new ChannelFutureListener() {
+		
+		instance.clients.put(clientAddress, clientChannel);
+		
+		clientChannel.closeFuture().addListener(new ChannelFutureListener() {
 			
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
-				virtual.remove(clientAddress);
+				instance.clients.remove(clientAddress);
 			}
 		});
 		
-		proxyChannel.write(
-			new WrapperPacket(
-				clientAddress,
-				WrapperPacketType.CONNECTION_START,
-				null
-			).encode()
-		);
-		proxyChannel.flush();
-		
-		return ch.newSucceededFuture();
-	}
-	
-	public int getScore() {
-		return virtual.size();
+		return true;
 	}
 	
 	/**
@@ -144,38 +133,11 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 		
 		return best;
 	}
-	
-	/**
-	 * This will return a new virtual server connector
-	 * to send data trough the multiproxy tunnel
-	 * */
-	public static ServerConnector generateConnector() {
-		ProxyEntryPointHandler handler = loadBalance();
-		if (handler == null) return null;
-		
-		return new ServerConnector() {
-			
-			private Channel ch;
-			
-			@Override
-			public ChannelFuture init(Channel clientChannel) throws Exception {
-				ChannelFuture f = handler.newVirtualConnection(clientChannel);
-				this.ch = f.channel();
-				clientChannel.closeFuture().addListener(new ChannelFutureListener() {
-					
-					@Override
-					public void operationComplete(ChannelFuture future) throws Exception {
-						f.channel().close();
-					}
-				});
-				return f;
-			}
-			
-			@Override
-			public Future<?> exit() throws Exception {
-				return ch.close();
-			}
-		};
+
+	public static InetSocketAddress getClientAddress(Channel clientChannel) {
+		if (clientChannel.remoteAddress() instanceof InetSocketAddress)
+			return (InetSocketAddress) clientChannel.remoteAddress();
+		return null;
 	}
 	
 }

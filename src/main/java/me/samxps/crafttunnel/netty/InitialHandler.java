@@ -1,5 +1,7 @@
 package me.samxps.crafttunnel.netty;
 
+import java.util.logging.Level;
+
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -25,6 +27,13 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	private ProtocolState state = ProtocolState.HANDSHAKE;
 	
 	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		CraftTunnel.getLogger().log(Level.INFO, "[{0}] {1} Initial handler connected", new Object[] {
+				"ClientChannelHandler", ProxyEntryPointHandler.getClientAddress(ctx.channel()).toString()
+		});
+	}
+	
+	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {		
 		if (active && msg instanceof MinecraftPacket) {
 			MinecraftPacket p = (MinecraftPacket) msg;
@@ -44,14 +53,15 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 							return;
 						}
 						
-						ServerConnector connector = getServerConnector();
-						
-						if (connector != null)
+						if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
+							if (!ProxyEntryPointHandler.handleClientChannel(ctx.channel()))
+								ctx.close();
+						} else {
 							nextPipeline(
 								ctx, "client", 
-								new ClientChannelHandler(connector)
+								new ClientChannelHandler(DirectServerConnector.newDefault())
 							);
-						else ctx.close();
+						}
 					}
 				}
 				
@@ -95,15 +105,6 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	
 	private void nextPipeline(ChannelHandlerContext ctx, String handlerName, ChannelHandler handler) {
 		ctx.channel().pipeline().addAfter("initial", handlerName, handler);
-	}
-	
-	private ServerConnector getServerConnector() {
-		if (config.getProxyMode() == ProxyMode.PROXY_ONLY) {
-			return DirectServerConnector.newDefault();
-		} else if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
-			return ProxyEntryPointHandler.generateConnector();
-		}
-		return null;
 	}
 	
 	@Override
