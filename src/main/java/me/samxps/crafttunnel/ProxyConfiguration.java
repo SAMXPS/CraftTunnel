@@ -37,8 +37,6 @@ public class ProxyConfiguration implements Cloneable {
 	}
 	
 	public InetSocketAddress getServerAddress() {
-		if (masterAddress == null)
-			return new InetSocketAddress(serverPort);
 		return new InetSocketAddress(serverHost, serverPort);
 	}
 	
