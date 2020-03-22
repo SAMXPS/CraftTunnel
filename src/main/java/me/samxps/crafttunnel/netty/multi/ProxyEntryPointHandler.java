@@ -57,8 +57,18 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 	}
 	
 	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		cause.printStackTrace();
+		ctx.close();
+		super.exceptionCaught(ctx, cause);
+	}
+	
+	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		instances.remove(this);
+		for (Channel c : clients.values()) {
+			c.close();
+		}
 		super.channelInactive(ctx);
 	}
 	
