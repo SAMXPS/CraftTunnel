@@ -1,5 +1,7 @@
 package me.samxps.crafttunnel.netty;
 
+import java.util.logging.Level;
+
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -23,6 +25,13 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	private final ProxyConfiguration config;
 	private boolean active = true;
 	private ProtocolState state = ProtocolState.HANDSHAKE;
+	
+	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		CraftTunnel.getLogger().log(Level.INFO, "[{0}] {1} Initial handler connected", new Object[] {
+				"ClientChannelHandler", ProxyEntryPointHandler.getClientAddress(ctx.channel()).toString()
+		});
+	}
 	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {		
