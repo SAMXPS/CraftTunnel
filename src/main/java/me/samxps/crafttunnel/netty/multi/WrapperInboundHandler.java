@@ -43,6 +43,7 @@ public class WrapperInboundHandler extends ChannelInboundHandlerAdapter{
 		
 		WrapperPacket w = new WrapperPacket(clientAddress, WrapperPacketType.DATA_BYTES, buf);
 		proxyChannel.write(w.encode());
+		proxyChannel.flush();
 	}
 	
 	 @Override
@@ -54,6 +55,7 @@ public class WrapperInboundHandler extends ChannelInboundHandlerAdapter{
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		proxyChannel.write(new WrapperPacket(clientAddress, WrapperPacketType.CONNECTION_CLOSE, null).encode());
+		proxyChannel.flush();
 		super.channelInactive(ctx);
 	}
 	
