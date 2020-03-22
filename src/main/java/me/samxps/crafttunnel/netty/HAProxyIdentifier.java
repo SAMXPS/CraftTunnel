@@ -10,6 +10,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.AttributeKey;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.netty.channel.ClientChannelHandler;
+import me.samxps.crafttunnel.netty.multi.ProxyEntryPointHandler;
 import me.samxps.crafttunnel.netty.multi.ProxyExitPointHandler;
 
 @RequiredArgsConstructor
@@ -38,7 +39,7 @@ public class HAProxyIdentifier extends ChannelInboundHandlerAdapter {
 	
 	public static HAProxyIdentifier fromClientChannel(Channel clientChannel, String serverHost, int serverPort) {
 		return new HAProxyIdentifier(
-			ClientChannelHandler.getClientAddress(clientChannel), 
+			ProxyEntryPointHandler.getClientAddress(clientChannel), 
 			new InetSocketAddress(serverHost, serverPort)
 		);
 	}
