@@ -1,4 +1,4 @@
-package me.samxps.crafttunnel.netty.connector;
+package me.samxps.crafttunnel.netty.proxy;
 
 import java.net.InetSocketAddress;
 
@@ -16,20 +16,22 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.netty.HAProxyIdentifier;
-import me.samxps.crafttunnel.netty.channel.ServerChannelHandler;
-import me.samxps.crafttunnel.netty.encode.MinecraftPacketDecoder;
 import me.samxps.crafttunnel.netty.encode.MinecraftPacketEncoder;
 
 @RequiredArgsConstructor
-public class DirectServerConnector implements ServerConnector {
+public class ServerConnector {
 
 	@NonNull private String host;
 	@NonNull private Integer port;
 	@NonNull private Boolean sendHAProxyHeader;
 	private EventLoopGroup workerGroup;
 	
-	public ChannelFuture init(Channel clientChannel) throws Exception{
-		workerGroup = new NioEventLoopGroup();
+	public ChannelFuture init(Channel clientChannel) throws Exception {
+		return this.init(clientChannel, new NioEventLoopGroup());
+	}
+	
+	public ChannelFuture init(Channel clientChannel, EventLoopGroup workerGroup) throws Exception{
+		this.workerGroup = workerGroup;
 		
 		Bootstrap b = new Bootstrap();
 		b.group(workerGroup)
@@ -41,7 +43,7 @@ public class DirectServerConnector implements ServerConnector {
 					 ch.pipeline().addLast(HAProxyIdentifier.fromClientChannel(clientChannel, host, port));
 				 }
 				 ch.pipeline().addLast(
-					new ServerChannelHandler(clientChannel), 
+					new ChannelLinker(clientChannel.newSucceededFuture()), 
 					new MinecraftPacketEncoder()
 				 );
 			 };
@@ -58,12 +60,12 @@ public class DirectServerConnector implements ServerConnector {
 	}
 	
 	/**
-	 * Creates a new instance of {@link DirectServerConnector} using the current
+	 * Creates a new instance of {@link ServerConnector} using the current
 	 * host and port configuration of {@link CraftTunnel} instance.
 	 * */
-	public static DirectServerConnector newDefault() {
+	public static ServerConnector newDefault() {
 		CraftTunnel main = CraftTunnel.getInstance();
-		return new DirectServerConnector(main.getRemoteHost(), main.getRemotePort(), true);
+		return new ServerConnector(main.getRemoteHost(), main.getRemotePort(), true);
 	}
 	
 }
