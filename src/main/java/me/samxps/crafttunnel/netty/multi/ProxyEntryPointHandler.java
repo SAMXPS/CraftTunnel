@@ -17,6 +17,7 @@ import me.samxps.crafttunnel.ServerType;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.multi.WrapperPacket;
 import me.samxps.crafttunnel.protocol.multi.WrapperPacket.WrapperPacketType;
+import me.samxps.crafttunnel.server.ProxyServer;
 
 /**
  * {@link ProxyEntryPointHandler} will be responsible for sending and receiving
@@ -112,7 +113,7 @@ public class ProxyEntryPointHandler extends ChannelInboundHandlerAdapter {
 		
 		InetSocketAddress clientAddress = getClientAddress(clientChannel);
 		
-		clientChannel.pipeline().addAfter("initial", "wrapper", new WrapperInboundHandler(
+		clientChannel.pipeline().addAfter(ProxyServer.HANDLER_INITIAL, ProxyServer.HANDLER_WRAPPER, new WrapperInboundHandler(
 				clientAddress, instance.proxyChannel));
 
 		
