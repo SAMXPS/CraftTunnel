@@ -2,9 +2,11 @@ package me.samxps.crafttunnel.netty;
 
 import java.util.logging.Level;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import me.samxps.crafttunnel.CraftTunnel;
 import me.samxps.crafttunnel.ProxyConfiguration;
@@ -17,6 +19,7 @@ import me.samxps.crafttunnel.protocol.minecraft.Handshake;
 import me.samxps.crafttunnel.protocol.minecraft.MinecraftPacket;
 import me.samxps.crafttunnel.protocol.minecraft.ProtocolState;
 import me.samxps.crafttunnel.protocol.multi.MagicPacket;
+import me.samxps.crafttunnel.server.ProxyServer;
 
 /**
  * InitalHandler will handle all incoming connections on proxy entry-point.
@@ -32,14 +35,18 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		CraftTunnel.getLogger().log(Level.INFO, "[{0}] {1} Initial handler connected", new Object[] {
-				"ClientChannelHandler", ProxyEntryPointHandler.getClientAddress(ctx.channel()).toString()
+		CraftTunnel.getLogger().log(Level.INFO, "[{0}] {1} has connected", new Object[] {
+				"InitialHandler", ProxyEntryPointHandler.getClientAddress(ctx.channel()).toString()
 		});
 	}
 	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {		
-		if (active && msg instanceof MinecraftPacket) {
+		if (!active) {
+			
+		} else if (msg instanceof MinecraftPacket) {
+			// When minecraft protocol is enabled
+			
 			MinecraftPacket p = (MinecraftPacket) msg;
 			
 			if (state == ProtocolState.HANDSHAKE) {
@@ -64,6 +71,30 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 				ctx.channel().writeAndFlush(p);
 				return;
 			}
+		} else if (msg instanceof ByteBuf) {
+			// When minecraft protocol is disabled
+			ByteBuf cpy = null;
+			try {
+				// Copy the message
+				cpy = ((ByteBuf)msg).copy();
+				// Try to decode as a Minecraft Packet
+				MinecraftPacket p = MinecraftPacketDecoder.decode(cpy);
+				
+				// Verify if it is related to multi-proxy mode
+				if (p.getPacketID() == MagicPacket.getMagicPacketID()) {
+					handleMagicPacket(ctx, p);
+					return;
+				}
+			} catch (Exception e) {
+				// If it is not a minecraft packet, just continue
+			} finally {
+				if (cpy != null) cpy.release();
+			}
+			
+			if (!proxyConnection(ctx)) {
+				ctx.close();
+				return;
+			}
 		}
 		
 		// Forward to next handler in the pipeline
@@ -81,30 +112,39 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	 * to the next handlers; false if the connection should be closed.
 	 * */
 	private boolean handleHandshake(ChannelHandlerContext ctx, Handshake h) throws Exception {
-		if (h != null) {
+		if (h == null) return false;
 			
-			if (h.getNextState() == 1) {
-				state = ProtocolState.STATUS;
-			} else if (h.getNextState() == 2) {
-				state = ProtocolState.LOGIN;
-				active = false;
-			} else {
+		if (h.getNextState() == 1) {
+			state = ProtocolState.STATUS;
+		} else if (h.getNextState() == 2) {
+			state = ProtocolState.LOGIN;
+			active = false;
+		} else {
+			return false;
+		}
+		
+		return proxyConnection(ctx);
+	}
+	
+	/**
+	 * This method will add next handlers on the pipeline to proxy the connection,
+	 * depending on this {@link #config}.
+	 * */
+	private boolean proxyConnection(ChannelHandlerContext ctx) throws Exception {
+		if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
+			if (!ProxyEntryPointHandler.handleClientChannel(ctx.channel()))
 				return false;
-			}
-			
-			if (config.getProxyMode() == ProxyMode.MULTI_PROXY_TUNNEL) {
-				if (!ProxyEntryPointHandler.handleClientChannel(ctx.channel()))
-					return false;
-			} else {
-				nextPipeline(
-					ctx, "client", new ChannelLinker(ServerConnector.newDefault().init(ctx.channel()))
-				);
-			}
-			
-			// TODO: log successfull connection ?
-			return true;
-		} 
-		return false;
+		} else {
+			nextPipeline(
+				ctx, ProxyServer.HANDLER_CLIENT, new ChannelLinker(ServerConnector.newDefault().init(ctx.channel()))
+			);
+		}
+
+		CraftTunnel.getLogger().log(Level.INFO, "[{0}] {1} handshake accepted", new Object[] {
+				"InitialHandler", ProxyEntryPointHandler.getClientAddress(ctx.channel()).toString()
+		});
+		
+		return true;
 	}
 	
 	private void handleMagicPacket(ChannelHandlerContext ctx, MinecraftPacket p) {
@@ -114,7 +154,13 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 
 			if (magic != null && magic.validateTimeCode()) {
 				active = false;
-				nextPipeline(ctx, "proxy", new ProxyEntryPointHandler());
+				
+				// adds minecraft decoder if not present
+				if (ctx.pipeline().get(ProxyServer.HANDLER_DECODER) == null) {
+					ctx.pipeline().addBefore(ProxyServer.HANDLER_INITIAL, ProxyServer.HANDLER_DECODER, new MinecraftPacketDecoder());
+				}
+				
+				nextPipeline(ctx, ProxyServer.HANDLER_PROXY_ENTRY, new ProxyEntryPointHandler());
 				ctx.channel().pipeline().remove(this);
 				return;
 			}
@@ -128,7 +174,7 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 	 * Adds the next {@link ChannelHandler} on the pipeline.
 	 * */
 	private void nextPipeline(ChannelHandlerContext ctx, String handlerName, ChannelHandler handler) {
-		ctx.channel().pipeline().addAfter("initial", handlerName, handler);
+		ctx.channel().pipeline().addAfter(ProxyServer.HANDLER_INITIAL, handlerName, handler);
 	}
 	
 	@Override
