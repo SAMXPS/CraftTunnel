@@ -31,6 +31,14 @@ public class ProxyServer implements Server{
 	private EventLoopGroup bossGroup;
 	private EventLoopGroup workerGroup;
 	
+	public static final String HANDLER_ENCODER = "encoder";
+	public static final String HANDLER_INITIAL = "initial";
+	public static final String HANDLER_CLIENT = "client";
+	public static final String HANDLER_DECODER = "decoder";
+	public static final String HANDLER_PROXY_EXIT = "exit";
+	public static final String HANDLER_PROXY_ENTRY = "proxy";
+	public static final String HANDLER_WRAPPER = "wrapper";
+	
 	private ServerBootstrap buildServer(ChannelInitializer<?> init) {
 		return new ServerBootstrap()
 				 .group(bossGroup, workerGroup)
@@ -49,9 +57,10 @@ public class ProxyServer implements Server{
 			ServerBootstrap gate = buildServer(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
-						ch.pipeline().addLast("decoder", new MinecraftPacketDecoder())
-						             .addLast("initial", new InitialHandler(config))
-						             .addLast("encoder", new MinecraftPacketEncoder());
+						if (config.isMinecraftProtocolOnly())
+							ch.pipeline().addLast(HANDLER_DECODER, new MinecraftPacketDecoder());
+						ch.pipeline().addLast(HANDLER_INITIAL, new InitialHandler(config));
+						ch.pipeline().addLast(HANDLER_ENCODER, new MinecraftPacketEncoder());
 					}
 				 });
 			
@@ -67,9 +76,10 @@ public class ProxyServer implements Server{
 				.handler(new ChannelInitializer<SocketChannel>() {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
-						ch.pipeline().addLast("decoder", new MinecraftPacketDecoder())
-			             			 .addLast("exit",    new ProxyExitPointHandler(config))
-			             			 .addLast("encoder", new MinecraftPacketEncoder());
+						if (config.isMinecraftProtocolOnly())
+							ch.pipeline().addLast(HANDLER_DECODER, new MinecraftPacketDecoder());
+						ch.pipeline().addLast(HANDLER_PROXY_EXIT,    new ProxyExitPointHandler(config));
+						ch.pipeline().addLast(HANDLER_ENCODER, new MinecraftPacketEncoder());
 					}
 				})
 				.connect(config.getMasterAddress());
