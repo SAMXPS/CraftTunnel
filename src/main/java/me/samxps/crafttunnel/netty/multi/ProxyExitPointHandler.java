@@ -127,7 +127,6 @@ public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
 					servers.remove(clientAddress);
-					System.out.println("closed!");
 				}
 			});
 
