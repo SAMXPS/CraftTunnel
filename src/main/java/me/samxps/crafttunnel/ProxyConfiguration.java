@@ -20,6 +20,7 @@ public class ProxyConfiguration implements Cloneable {
 	private String masterAddress = null;
 	private int masterPort = 25881;
 	
+	private boolean minecraftProtocolOnly = true;
 	private boolean HAProxyHeaderEnabled = true;
 	private String serverHost = "localhost";
 	private int serverPort = 25565;
