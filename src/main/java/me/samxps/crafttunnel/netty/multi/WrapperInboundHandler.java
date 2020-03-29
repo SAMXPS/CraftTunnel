@@ -24,7 +24,7 @@ public class WrapperInboundHandler extends ChannelInboundHandlerAdapter{
 				clientAddress,
 				WrapperPacketType.CONNECTION_START,
 				null
-			).encode()
+			).encodeToMinecraftPacket()
 		);
 		proxyChannel.flush();
 	}
@@ -42,7 +42,7 @@ public class WrapperInboundHandler extends ChannelInboundHandlerAdapter{
 		}
 		
 		WrapperPacket w = new WrapperPacket(clientAddress, WrapperPacketType.DATA_BYTES, buf);
-		proxyChannel.write(w.encode());
+		proxyChannel.write(w.encodeToMinecraftPacket());
 		proxyChannel.flush();
 	}
 	
@@ -54,7 +54,7 @@ public class WrapperInboundHandler extends ChannelInboundHandlerAdapter{
 	
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		proxyChannel.write(new WrapperPacket(clientAddress, WrapperPacketType.CONNECTION_CLOSE, null).encode());
+		proxyChannel.write(new WrapperPacket(clientAddress, WrapperPacketType.CONNECTION_CLOSE, null).encodeToMinecraftPacket());
 		proxyChannel.flush();
 		super.channelInactive(ctx);
 	}

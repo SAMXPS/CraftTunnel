@@ -28,22 +28,30 @@ public class WrapperPacket {
 	 * */
 	public static WrapperPacket decode(MinecraftPacket p) {
 		if (p.getPacketID() == packetID) {
-			WrapperPacket w = new WrapperPacket();
-			w.clientAddress = new InetSocketAddress(p.readString(), p.readUnsignedShort());
-			w.type = WrapperPacketType.fromID(p.getData().readByte());
-			w.data = p.getData().discardReadBytes();
-			return w;
+			return decode(p.getData());
 		}
 		return null;
 	}
 	
-	public MinecraftPacket encode() {
+	public static WrapperPacket decode(ByteBuf data) {
+		WrapperPacket w = new WrapperPacket();
+		w.clientAddress = new InetSocketAddress(MinecraftPacket.readString(data), data.readUnsignedShort());
+		w.type = WrapperPacketType.fromID(data.readByte());
+		w.data = data.discardReadBytes();
+		return w;
+	}
+	
+	public ByteBuf encodeToBytes() {
 		ByteBuf head = Unpooled.buffer();
 		MinecraftPacket.writeString(clientAddress.getAddress().getHostAddress(), head);
 		head.writeShort(clientAddress.getPort());
 		head.writeByte(type.getID());
 		ByteBuf packetData = data == null ? head : head.writeBytes(data);
-		return new MinecraftPacket(packetID, packetData);
+		return packetData;
+	}
+	
+	public MinecraftPacket encodeToMinecraftPacket() {
+		return new MinecraftPacket(packetID, encodeToBytes());
 	}
 	
 	public static enum WrapperPacketType {
