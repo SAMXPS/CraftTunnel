@@ -71,7 +71,7 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 				ctx.channel().writeAndFlush(p);
 				return;
 			}
-		} else if (msg instanceof ByteBuf) {
+		} else if (msg instanceof ByteBuf && !config.isMinecraftProtocolOnly()) {
 			// When minecraft protocol is disabled
 			ByteBuf cpy = null;
 			try {
