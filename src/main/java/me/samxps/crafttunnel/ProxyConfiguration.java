@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import me.samxps.crafttunnel.protocol.TransportType;
 import me.samxps.crafttunnel.server.ProxyServer;
 
 /**
@@ -22,6 +23,7 @@ public class ProxyConfiguration implements Cloneable {
 	/** The hostname ProxyEntryPoint should bind */
 	private String bindHost = null;
 	
+	private TransportType transportType = TransportType.TCP;
 	private ProxyMode proxyMode = ProxyMode.PROXY_ONLY;
 	private ServerType serverType = ServerType.ENTRY_POINT;
 	

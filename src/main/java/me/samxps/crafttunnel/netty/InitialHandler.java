@@ -136,7 +136,15 @@ public class InitialHandler extends ChannelInboundHandlerAdapter{
 				return false;
 		} else {
 			nextPipeline(
-				ctx, ProxyServer.HANDLER_CLIENT, new ChannelLinker(ServerConnector.newDefault().init(ctx.channel()))
+				ctx, ProxyServer.HANDLER_CLIENT, 
+				new ChannelLinker(
+					new ServerConnector(
+						config.getServerHost(), 
+						config.getServerPort(), 
+						config.getTransportType(), 
+						config.isHAProxyHeaderEnabled()
+					).init(ctx.channel())
+				)
 			);
 		}
 

@@ -81,7 +81,7 @@ public class ProxyExitPointHandler extends ChannelInboundHandlerAdapter {
 			Bootstrap b = new Bootstrap();
 			b.group(connectorEventLoop)
 			 .option(ChannelOption.SO_KEEPALIVE, true)
-			 .channel(NioSocketChannel.class)
+			 .channel(config.getTransportType().getChannelClass())
 			 .handler(new ChannelInitializer<SocketChannel>() {
 				 protected void initChannel(SocketChannel ch) throws Exception {
 					 if (config.isHAProxyHeaderEnabled()) {
