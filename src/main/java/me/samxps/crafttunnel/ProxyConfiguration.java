@@ -23,6 +23,7 @@ public class ProxyConfiguration implements Cloneable {
 	/** The hostname ProxyEntryPoint should bind */
 	private String bindHost = null;
 	
+	/** Transport layer protocol to be used */
 	private TransportType transportType = TransportType.TCP;
 	private ProxyMode proxyMode = ProxyMode.PROXY_ONLY;
 	private ServerType serverType = ServerType.ENTRY_POINT;
